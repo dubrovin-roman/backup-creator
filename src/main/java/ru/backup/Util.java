@@ -8,21 +8,11 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Util {
-    public static String getDataFromCommandString(String message) {
-        System.out.println(message);
-        String result;
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in))) {
-            result = bufferedReader.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
-    }
 
-    public static String getFileNameBackUpZip() {
+    public static String getFileNameBackUpZip(String fileNameStartWord) {
         Date currentDate = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        return String.format("backup-%s.zip", formatter.format(currentDate));
+        return String.format("%s-backup-%s.zip", fileNameStartWord, formatter.format(currentDate));
     }
 
     public static ArrayList<File> getAllFiles(File[] files) {
