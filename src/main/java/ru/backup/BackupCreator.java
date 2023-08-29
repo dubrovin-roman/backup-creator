@@ -95,12 +95,18 @@ public class BackupCreator {
             zos.putNextEntry(entry);
             long countCopyByte = Files.copy(filePath, zos);
             zos.closeEntry();
-            logger.log("Заархивирован файл с именем: "
+            long countByteAfterArchived = entry.getCompressedSize();
+            double compressionPercentage = countCopyByte == 0 ? 0 : ((((double) countByteAfterArchived / (double) countCopyByte) - 1) * 100);
+            logger.log("archived: "
                     + filePath.getFileName().toString()
                     + ", "
-                    + "размер: "
+                    + "size: "
                     + countCopyByte
-                    + " байт.");
+                    + " | "
+                    + countByteAfterArchived
+                    + " byte, "
+                    + Util.roundDouble(Math.abs(compressionPercentage))
+                    + " %");
         } catch (IOException e) {
             throw new RuntimeException("Не получилось получить доступ к архивируемому файлу.");
         }
@@ -110,9 +116,8 @@ public class BackupCreator {
         try {
             zos.putNextEntry(entry);
             zos.closeEntry();
-            logger.log("Каталог "
-                    + filePath.toString()
-                    + " помещен в архив.");
+            logger.log("archived: "
+                    + filePath.toString());
         } catch (IOException e) {
             throw new RuntimeException("Не получилось поместить пустой каталог в архив.");
         }
