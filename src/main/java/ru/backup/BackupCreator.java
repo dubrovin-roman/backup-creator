@@ -13,6 +13,10 @@ import java.util.zip.ZipOutputStream;
 public class BackupCreator {
 
     private Logger logger;
+    private String pathInStr;
+    private String pathOutStr;
+    private String nameFileStr;
+    private boolean isHaveParameters;
 
     public BackupCreator(Logger logger) {
         this.logger = logger;
@@ -24,6 +28,38 @@ public class BackupCreator {
 
     public void setLogger(Logger logger) {
         this.logger = logger;
+    }
+
+    public String getPathInStr() {
+        return pathInStr;
+    }
+
+    public void setPathInStr(String pathInStr) {
+        this.pathInStr = pathInStr;
+    }
+
+    public String getPathOutStr() {
+        return pathOutStr;
+    }
+
+    public void setPathOutStr(String pathOutStr) {
+        this.pathOutStr = pathOutStr;
+    }
+
+    public String getNameFileStr() {
+        return nameFileStr;
+    }
+
+    public void setNameFileStr(String nameFileStr) {
+        this.nameFileStr = nameFileStr;
+    }
+
+    public boolean isHaveParameters() {
+        return isHaveParameters;
+    }
+
+    public void setHaveParameters(boolean haveParameters) {
+        isHaveParameters = haveParameters;
     }
 
     public void createBackup() {
@@ -56,17 +92,25 @@ public class BackupCreator {
         Path nameFile;
         Path pathOutWithFileName;
 
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in))) {
-            logger.log("Введите дерикторию для которой необходимо создать backup:");
-            pathIn = Path.of(bufferedReader.readLine());
-            logger.log("Введите дерикторию где будет хранится backup:");
-            pathOut = Path.of(bufferedReader.readLine());
-            logger.log("Введите название backup файла:");
-            String nameFileStr = bufferedReader.readLine();
-            nameFile = Path.of(Util.getFileNameBackUpZip(nameFileStr));
-        } catch (InvalidPathException | IOException e) {
-            throw new RuntimeException("Вы ввели недопустимый путь директории.");
+        if (isHaveParameters) {
+            pathIn = Path.of(this.pathInStr);
+            pathOut = Path.of(this.pathOutStr);
+            nameFile = Path.of(this.nameFileStr);
+        } else {
+            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in))) {
+                logger.log("Введите дерикторию для которой необходимо создать backup:");
+                pathIn = Path.of(bufferedReader.readLine());
+                logger.log("Введите дерикторию где будет хранится backup:");
+                pathOut = Path.of(bufferedReader.readLine());
+                logger.log("Введите название backup файла:");
+                String nameFileStr = bufferedReader.readLine();
+                nameFile = Path.of(Util.getFileNameBackUpZip(nameFileStr));
+            } catch (InvalidPathException | IOException e) {
+                throw new RuntimeException("Вы ввели недопустимый путь директории.");
+            }
         }
+
+
 
         // создание директории
         try {
