@@ -36,19 +36,13 @@ public class BackupCreator {
             files.forEach(file -> {
                 Path filePathTemp = file.toPath();
                 Path relativePath = data.getPathIn().relativize(filePathTemp);
-                ZipEntry entry = new ZipEntry(relativePath.toString());
-                try {
-                    zipOutputStream.putNextEntry(entry);
-                    long countCopyByte = Files.copy(filePathTemp, zipOutputStream);
-                    zipOutputStream.closeEntry();
-                    logger.log("Заархивирован файл с именем: "
-                            + filePathTemp.getFileName().toString()
-                            + ", "
-                            + "размер: "
-                            + countCopyByte
-                            + " байт.");
-                } catch (IOException e) {
-                    throw new RuntimeException("Не получилось получить доступ к архивируемому файлу.");
+                ZipEntry entry;
+                if (file.isDirectory()) {
+                    entry = new ZipEntry(relativePath + "\\");
+                    copyCatalogToArchive(zipOutputStream, entry, filePathTemp, logger);
+                } else {
+                    entry = new ZipEntry(relativePath.toString());
+                    copyFileToArchive(zipOutputStream, entry, filePathTemp, logger);
                 }
             });
         } catch (IOException e) {
@@ -74,7 +68,7 @@ public class BackupCreator {
             throw new RuntimeException("Вы ввели недопустимый путь директории.");
         }
 
-
+        // создание директории
         try {
             if (!Files.exists(pathOut)) {
                 Files.createDirectory(pathOut);
@@ -82,7 +76,7 @@ public class BackupCreator {
         } catch (IOException e) {
             throw new RuntimeException("Не получилось создать директорию для хранения backup.");
         }
-
+        // создание файла в директории
         try {
             pathOutWithFileName = pathOut.resolve(nameFile);
             Files.deleteIfExists(pathOutWithFileName);
@@ -96,5 +90,31 @@ public class BackupCreator {
         return new DataForBackupCreatorDTO(pathIn, pathOutWithFileName);
     }
 
+    private void copyFileToArchive(ZipOutputStream zos, ZipEntry entry, Path filePath, Logger logger) {
+        try {
+            zos.putNextEntry(entry);
+            long countCopyByte = Files.copy(filePath, zos);
+            zos.closeEntry();
+            logger.log("Заархивирован файл с именем: "
+                    + filePath.getFileName().toString()
+                    + ", "
+                    + "размер: "
+                    + countCopyByte
+                    + " байт.");
+        } catch (IOException e) {
+            throw new RuntimeException("Не получилось получить доступ к архивируемому файлу.");
+        }
+    }
 
+    private void copyCatalogToArchive(ZipOutputStream zos, ZipEntry entry, Path filePath, Logger logger) {
+        try {
+            zos.putNextEntry(entry);
+            zos.closeEntry();
+            logger.log("Каталог "
+                    + filePath.toString()
+                    + " помещен в архив.");
+        } catch (IOException e) {
+            throw new RuntimeException("Не получилось поместить пустой каталог в архив.");
+        }
+    }
 }

@@ -19,6 +19,7 @@ public class Util {
         ArrayList<File> result = new ArrayList<>();
         for (File file: files) {
             if (file.isDirectory()) {
+                if (Objects.requireNonNull(file.listFiles()).length == 0) result.add(file);
                 result.addAll(Util.getAllFiles(Objects.requireNonNull(file.listFiles())));
             } else {
                 result.add(file);
