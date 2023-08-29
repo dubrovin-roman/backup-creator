@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -63,6 +66,9 @@ public class BackupCreator {
     }
 
     public void createBackup() {
+        AtomicLong countArchivedFiles = new AtomicLong();
+        AtomicLong totalFileSize = new AtomicLong();
+        AtomicLong totalSizeOfCompressedFiles = new AtomicLong();
         DataForBackupCreatorDTO data = getData();
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(data.getPathOutWithFileName().toFile())))) {
             File[] catalogs = data.getPathIn().toFile().listFiles();
@@ -78,9 +84,21 @@ public class BackupCreator {
                     copyCatalogToArchive(zipOutputStream, entry, filePathTemp, logger);
                 } else {
                     entry = new ZipEntry(relativePath.toString());
-                    copyFileToArchive(zipOutputStream, entry, filePathTemp, logger);
+                    Map<String, Long> mapBytes = copyFileToArchive(zipOutputStream, entry, filePathTemp, logger);
+                    countArchivedFiles.incrementAndGet();
+                    totalFileSize.addAndGet(mapBytes.get("countCopyByte"));
+                    totalSizeOfCompressedFiles.addAndGet(mapBytes.get("countByteAfterArchived"));
                 }
             });
+            logger.log("total archived: "
+                    + countArchivedFiles.get()
+                    + " files, size: "
+                    + totalFileSize.get()
+                    + " | "
+                    + totalSizeOfCompressedFiles.get()
+                    + " bytes, "
+                    + Util.getCompressionPercentage(totalFileSize.get(), totalSizeOfCompressedFiles.get()));
+            logger.log("Done!");
         } catch (IOException e) {
             throw new RuntimeException("Ошибка записи в zip файл.");
         }
@@ -95,7 +113,7 @@ public class BackupCreator {
         if (isHaveParameters) {
             pathIn = Path.of(this.pathInStr);
             pathOut = Path.of(this.pathOutStr);
-            nameFile = Path.of(this.nameFileStr);
+            nameFile = Path.of(Util.getFileNameBackUpZip(this.nameFileStr));
         } else {
             try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in))) {
                 logger.log("Введите дерикторию для которой необходимо создать backup:");
@@ -109,7 +127,6 @@ public class BackupCreator {
                 throw new RuntimeException("Вы ввели недопустимый путь директории.");
             }
         }
-
 
 
         // создание директории
@@ -134,13 +151,16 @@ public class BackupCreator {
         return new DataForBackupCreatorDTO(pathIn, pathOutWithFileName);
     }
 
-    private void copyFileToArchive(ZipOutputStream zos, ZipEntry entry, Path filePath, Logger logger) {
+    private Map<String, Long> copyFileToArchive(ZipOutputStream zos, ZipEntry entry, Path filePath, Logger logger) {
+        Map<String, Long> mapBytes = new HashMap<>();
+
         try {
             zos.putNextEntry(entry);
             long countCopyByte = Files.copy(filePath, zos);
+            mapBytes.put("countCopyByte", countCopyByte);
             zos.closeEntry();
             long countByteAfterArchived = entry.getCompressedSize();
-            double compressionPercentage = countCopyByte == 0 ? 0 : ((((double) countByteAfterArchived / (double) countCopyByte) - 1) * 100);
+            mapBytes.put("countByteAfterArchived", countByteAfterArchived);
             logger.log("archived: "
                     + filePath.getFileName().toString()
                     + ", "
@@ -148,12 +168,13 @@ public class BackupCreator {
                     + countCopyByte
                     + " | "
                     + countByteAfterArchived
-                    + " byte, "
-                    + Util.roundDouble(Math.abs(compressionPercentage))
-                    + " %");
+                    + " bytes, "
+                    + Util.getCompressionPercentage(countCopyByte, countByteAfterArchived));
         } catch (IOException e) {
             throw new RuntimeException("Не получилось получить доступ к архивируемому файлу.");
         }
+
+        return mapBytes;
     }
 
     private void copyCatalogToArchive(ZipOutputStream zos, ZipEntry entry, Path filePath, Logger logger) {

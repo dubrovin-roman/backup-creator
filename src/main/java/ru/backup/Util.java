@@ -35,4 +35,9 @@ public class Util {
         df.setRoundingMode(RoundingMode.CEILING);
         return df.format(d);
     }
+
+    public static String getCompressionPercentage(long fileSize, long fileCompressionSize) {
+        double compressionPercentage = fileSize == 0 ? 0 : ((((double) fileCompressionSize / (double) fileSize) - 1) * 100);
+        return Util.roundDouble(Math.abs(compressionPercentage)) + " %";
+    }
 }
