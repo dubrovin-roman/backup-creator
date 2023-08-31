@@ -9,11 +9,12 @@ public class Main {
 
         try {
             BackupCreator backupCreator = new BackupCreator(logger);
-            if (args.length == 3) {
+            if (args.length == 4) {
                 backupCreator.setHaveParameters(true);
                 backupCreator.setPathInStr(args[0]);
                 backupCreator.setPathOutStr(args[1]);
                 backupCreator.setNameFileStr(args[2]);
+                backupCreator.setDelFiles(Boolean.parseBoolean(args[3]));
             }
             backupCreator.createBackup();
         } catch (RuntimeException e) {

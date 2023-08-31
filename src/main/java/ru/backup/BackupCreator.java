@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -20,9 +21,18 @@ public class BackupCreator {
     private String pathOutStr;
     private String nameFileStr;
     private boolean isHaveParameters;
+    private boolean isDelFiles;
 
     public BackupCreator(Logger logger) {
         this.logger = logger;
+    }
+
+    public boolean isDelFiles() {
+        return isDelFiles;
+    }
+
+    public void setDelFiles(boolean delFiles) {
+        isDelFiles = delFiles;
     }
 
     public Logger getLogger() {
@@ -74,7 +84,7 @@ public class BackupCreator {
             File[] catalogs = data.getPathIn().toFile().listFiles();
             if (catalogs == null) throw new RuntimeException("Исходный каталог не существует.");
             if (catalogs.length == 0) throw new RuntimeException("Исходный каталог пуст.");
-            ArrayList<File> files = Util.getAllFiles(catalogs);
+            ArrayList<File> files = Util.getAllFilesAndEmptyFolders(catalogs);
             files.forEach(file -> {
                 Path filePathTemp = file.toPath();
                 Path relativePath = data.getPathIn().relativize(filePathTemp);
@@ -137,6 +147,11 @@ public class BackupCreator {
         } catch (IOException e) {
             throw new RuntimeException("Не получилось создать директорию для хранения backup.");
         }
+
+        if (this.isDelFiles) {
+            delFilesAndFolders(pathOut);
+        }
+
         // создание файла в директории
         try {
             pathOutWithFileName = pathOut.resolve(nameFile);
@@ -186,5 +201,42 @@ public class BackupCreator {
         } catch (IOException e) {
             throw new RuntimeException("Не получилось поместить пустой каталог в архив.");
         }
+    }
+
+    private void delFilesAndFolders(Path pathOut) {
+        File[] filesOfPathOut = pathOut.toFile().listFiles();
+        if (filesOfPathOut == null) throw new RuntimeException("Директории переданной для удаления не существует.");
+        if (filesOfPathOut.length == 0) {
+            logger.log("В директории переданной для удаления нет файлов и папок.");
+            return;
+        }
+        ArrayList<File> files = Util.getAllFiles(filesOfPathOut);
+        files.forEach(file -> {
+            try {
+                Files.deleteIfExists(file.toPath());
+            } catch (IOException e) {
+                throw new RuntimeException("Проблема с удалением файла.");
+            }
+        });
+        filesOfPathOut = delFolders(pathOut);
+        while (filesOfPathOut.length > 0) {
+            filesOfPathOut = delFolders(pathOut);
+        }
+    }
+
+    private File[] delFolders(Path pathOut) {
+        File[] filesOfPathOut = pathOut.toFile().listFiles();
+        if (filesOfPathOut == null) throw new RuntimeException("Директории переданной для удаления не существует.");
+        if (filesOfPathOut.length > 0) {
+            ArrayList<File> emptyFolders = Util.getAllFilesAndEmptyFolders(filesOfPathOut);
+            emptyFolders.forEach(file -> {
+                try {
+                    Files.deleteIfExists(file.toPath());
+                } catch (IOException e) {
+                    throw new RuntimeException("Проблема с удалением пустой директории.");
+                }
+            });
+        }
+        return pathOut.toFile().listFiles();
     }
 }

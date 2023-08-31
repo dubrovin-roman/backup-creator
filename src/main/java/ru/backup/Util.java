@@ -1,9 +1,6 @@
 package ru.backup;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -17,11 +14,23 @@ public class Util {
         return String.format("%s-backup-%s.zip", fileNameStartWord, formatter.format(currentDate));
     }
 
-    public static ArrayList<File> getAllFiles(File[] files) {
+    public static ArrayList<File> getAllFilesAndEmptyFolders(File[] files) {
         ArrayList<File> result = new ArrayList<>();
-        for (File file: files) {
+        for (File file : files) {
             if (file.isDirectory()) {
                 if (Objects.requireNonNull(file.listFiles()).length == 0) result.add(file);
+                result.addAll(Util.getAllFilesAndEmptyFolders(Objects.requireNonNull(file.listFiles())));
+            } else {
+                result.add(file);
+            }
+        }
+        return result;
+    }
+
+    public static ArrayList<File> getAllFiles(File[] files) {
+        ArrayList<File> result = new ArrayList<>();
+        for (File file : files) {
+            if (file.isDirectory()) {
                 result.addAll(Util.getAllFiles(Objects.requireNonNull(file.listFiles())));
             } else {
                 result.add(file);
