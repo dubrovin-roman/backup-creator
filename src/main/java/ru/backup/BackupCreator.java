@@ -216,7 +216,7 @@ public class BackupCreator {
         File[] filesOfPathOut = pathOut.toFile().listFiles();
         if (filesOfPathOut == null) throw new RuntimeException("Директории переданной для удаления не существует.");
         if (filesOfPathOut.length == 0) {
-            logger.log("В директории переданной для удаления нет файлов и папок.");
+            System.out.println("В директории переданной для удаления нет файлов и папок.");
             return;
         }
         ArrayList<File> files = Util.getAllFiles(filesOfPathOut);
