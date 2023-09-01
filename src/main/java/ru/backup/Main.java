@@ -1,11 +1,12 @@
 package ru.backup;
 
+import ru.logger.ConsoleFileLogger;
 import ru.logger.ConsoleLogger;
 import ru.logger.Logger;
 
 public class Main {
     public static void main(String[] args) {
-        Logger logger = new ConsoleLogger();
+        Logger logger = new ConsoleFileLogger();
 
         try {
             BackupCreator backupCreator = new BackupCreator(logger);
@@ -18,7 +19,7 @@ public class Main {
             }
             backupCreator.createBackup();
         } catch (RuntimeException e) {
-            logger.log(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 }

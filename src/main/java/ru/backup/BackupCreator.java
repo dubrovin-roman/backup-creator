@@ -1,5 +1,6 @@
 package ru.backup;
 
+import ru.logger.ConsoleFileLogger;
 import ru.logger.Logger;
 
 import java.io.*;
@@ -111,6 +112,10 @@ public class BackupCreator {
         } catch (IOException e) {
             throw new RuntimeException("Ошибка записи в zip файл.");
         }
+        // записывыем данные в лог файл
+        if (logger instanceof ConsoleFileLogger) {
+            ((ConsoleFileLogger) logger).writeLogFile();
+        }
     }
 
     private DataForBackupCreatorDTO getData() {
@@ -125,11 +130,11 @@ public class BackupCreator {
             nameFile = Path.of(Util.getFileNameBackUpZip(this.nameFileStr));
         } else {
             try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in))) {
-                logger.log("Введите дерикторию для которой необходимо создать backup:");
+                System.out.println("Введите дерикторию для которой необходимо создать backup:");
                 pathIn = Path.of(bufferedReader.readLine());
-                logger.log("Введите дерикторию где будет хранится backup:");
+                System.out.println("Введите дерикторию где будет хранится backup:");
                 pathOut = Path.of(bufferedReader.readLine());
-                logger.log("Введите название backup файла:");
+                System.out.println("Введите название backup файла:");
                 String nameFileStr = bufferedReader.readLine();
                 nameFile = Path.of(Util.getFileNameBackUpZip(nameFileStr));
             } catch (InvalidPathException | IOException e) {
@@ -149,6 +154,11 @@ public class BackupCreator {
 
         if (this.isDelFiles) {
             delFilesAndFolders(pathOut);
+        }
+
+        // передаем путь для создания лог файла
+        if (logger instanceof ConsoleFileLogger) {
+            ((ConsoleFileLogger) logger).setPathOut(pathOut);
         }
 
         // создание файла в директории
